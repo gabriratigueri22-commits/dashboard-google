@@ -2,11 +2,11 @@
  * S2S Tracking Middleware — Server Entry Point v2
  *
  * Express server com:
- *  - Autenticação simples (login/session)
- *  - CRUD de conversões
+ *  - CRUD de conversões (TAG + LABEL)
  *  - Webhook dinâmico por slug (/api/webhook/:slug)
+ *  - Pixel fire para Google Ads (sem OAuth)
  *  - Dashboard frontend
- *  - Deploy-ready para Vercel/Render
+ *  - Deploy-ready para Render
  */
 
 import dotenv from 'dotenv';
@@ -23,12 +23,6 @@ import {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Credenciais de login (múltiplos usuários)
-const USERS: Record<string, string> = {
-  'cashnotalo': process.env.AUTH_PASS || '12345678',
-  'roinotalo': process.env.AUTH_PASS_2 || '12345678',
-};
-
 // ── Middlewares ──────────────────────────────────────────
 
 app.use(express.json({ limit: '5mb' }));
@@ -37,7 +31,7 @@ app.use(express.urlencoded({ extended: true }));
 // CORS
 app.use((_req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Auth-Token');
+  res.header('Access-Control-Allow-Headers', 'Content-Type');
   res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   if (_req.method === 'OPTIONS') {
     res.sendStatus(200);
@@ -49,35 +43,9 @@ app.use((_req, res, next) => {
 // Servir frontend
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// ── Auth Middleware ──────────────────────────────────────
+// ── Rotas ────────────────────────────────────────────────
 
-function isValidToken(token: string): boolean {
-  const [user, pass] = token.split(':');
-  return !!user && USERS[user] === pass;
-}
-
-function requireAuth(req: express.Request, res: express.Response, next: express.NextFunction): void {
-  const token = req.headers['x-auth-token'] as string;
-  if (!token || !isValidToken(token)) {
-    res.status(401).json({ error: 'Não autorizado' });
-    return;
-  }
-  next();
-}
-
-// ── Rotas Públicas ───────────────────────────────────────
-
-// Login
-app.post('/api/auth/login', (req, res) => {
-  const { username, password } = req.body;
-  if (username && USERS[username] && USERS[username] === password) {
-    res.json({ success: true, token: `${username}:${password}` });
-  } else {
-    res.status(401).json({ success: false, error: 'Credenciais inválidas' });
-  }
-});
-
-// Webhook dinâmico (público — a Genesys vai chamar)
+// Webhook dinâmico (a Genesys vai chamar)
 app.post('/api/webhook/:slug', handleDynamicWebhook);
 
 // Healthcheck
@@ -91,16 +59,14 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
-// ── Rotas Protegidas ─────────────────────────────────────
-
 // Listar conversões
-app.get('/api/conversions', requireAuth, (_req, res) => {
+app.get('/api/conversions', (_req, res) => {
   const conversions = getAllConversions();
   res.json(conversions);
 });
 
 // Criar conversão
-app.post('/api/conversions', requireAuth, (req, res) => {
+app.post('/api/conversions', (req, res) => {
   try {
     const { name, conversion_id, conversion_label } = req.body;
 
@@ -124,7 +90,7 @@ app.post('/api/conversions', requireAuth, (req, res) => {
 });
 
 // Deletar conversão
-app.delete('/api/conversions/:id', requireAuth, (req, res) => {
+app.delete('/api/conversions/:id', (req, res) => {
   const deleted = deleteConversion(req.params.id);
   if (deleted) {
     res.json({ success: true });
@@ -134,18 +100,18 @@ app.delete('/api/conversions/:id', requireAuth, (req, res) => {
 });
 
 // Logs
-app.get('/api/logs', requireAuth, (req, res) => {
+app.get('/api/logs', (req, res) => {
   const limit = parseInt(req.query.limit as string) || 50;
   res.json(getRecentLogs(limit));
 });
 
 // Stats
-app.get('/api/stats', requireAuth, (_req, res) => {
+app.get('/api/stats', (_req, res) => {
   res.json(getLogStats());
 });
 
 // Testar webhook (simulação interna)
-app.post('/api/test/:slug', requireAuth, async (req, res) => {
+app.post('/api/test/:slug', async (req, res) => {
   const { slug } = req.params;
   const conversion = getConversionBySlug(slug);
 

@@ -220,29 +220,9 @@
   </style>
 </head>
 <body>
-  <!-- ═══ LOGIN PAGE ═══ -->
-  <div class="login-page" id="loginPage">
-    <div class="login-box">
-      <div class="logo">
-        <div class="logo-icon">⚡</div>
-        <h1>S2S Tracker</h1>
-        <p>Sistema de Tracking Server-to-Server</p>
-      </div>
-      <div class="login-error" id="loginError">Credenciais inválidas</div>
-      <div class="field">
-        <label>Usuário</label>
-        <input type="text" id="loginUser" placeholder="Seu usuário" autocomplete="username">
-      </div>
-      <div class="field">
-        <label>Senha</label>
-        <input type="password" id="loginPass" placeholder="Sua senha" autocomplete="current-password">
-      </div>
-      <button class="login-btn" id="loginBtn" onclick="doLogin()">Entrar</button>
-    </div>
-  </div>
 
-  <!-- ═══ APP ═══ -->
-  <div class="app" id="appContainer">
+<!-- ═══ APP ═══ -->
+  <div class="app" id="appContainer" style="display:flex;">
     <aside class="sidebar">
       <div class="logo-area">
         <div class="icon">⚡</div>
@@ -266,8 +246,6 @@
         <div class="nav-item" onclick="toggleTheme()" style="margin-bottom:8px;">
           <span class="ni-icon" id="themeIcon">🌙</span> <span id="themeLabel">Tema Escuro</span>
         </div>
-        <div class="user-info">🟢 <span id="currentUser">—</span></div>
-        <div class="logout-btn" onclick="doLogout()">🚪 Sair</div>
       </div>
     </aside>
 
@@ -414,41 +392,11 @@ GA4_MEASUREMENT_ID=</div>
 
   <script>
     const API = window.location.origin;
-    let authToken = localStorage.getItem('s2s_token') || '';
     let conversions = [];
     let logs = [];
 
-    // ═══ AUTH ═══
-    function headers() { return { 'Content-Type':'application/json', 'X-Auth-Token': authToken }; }
-
-    function checkAuth() {
-      if (authToken) {
-        document.getElementById('loginPage').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'flex';
-        document.getElementById('currentUser').textContent = authToken.split(':')[0];
-        refreshAll();
-      }
-    }
-
-    async function doLogin() {
-      const user = document.getElementById('loginUser').value.trim();
-      const pass = document.getElementById('loginPass').value;
-      const btn = document.getElementById('loginBtn');
-      const err = document.getElementById('loginError');
-      if (!user || !pass) { err.textContent = 'Preencha todos os campos'; err.style.display = 'block'; return; }
-      btn.disabled = true; btn.textContent = 'Entrando...'; err.style.display = 'none';
-      try {
-        const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:user,password:pass}) });
-        const d = await r.json();
-        if (d.success) { authToken = d.token; localStorage.setItem('s2s_token', authToken); checkAuth(); }
-        else { err.textContent = d.error || 'Credenciais inválidas'; err.style.display = 'block'; }
-      } catch(e) { err.textContent = 'Erro de conexão'; err.style.display = 'block'; }
-      btn.disabled = false; btn.textContent = 'Entrar';
-    }
-
-    function doLogout() { authToken = ''; localStorage.removeItem('s2s_token'); location.reload(); }
-
-    document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+    // ═══ API ═══
+    function headers() { return { 'Content-Type':'application/json' }; };
 
     // ═══ NAV ═══
     function nav(s) {
@@ -463,7 +411,6 @@ GA4_MEASUREMENT_ID=</div>
 
     async function apiFetch(url, opts={}) {
       const r = await fetch(url, { ...opts, headers: { ...headers(), ...(opts.headers||{}) } });
-      if (r.status === 401) { doLogout(); throw new Error('Not authorized'); }
       return r;
     }
 
@@ -703,8 +650,8 @@ GA4_MEASUREMENT_ID=</div>
     initTheme();
 
     // ═══ INIT ═══
-    checkAuth();
-    setInterval(() => { if(authToken) refreshAll(); }, 15000);
+    refreshAll();
+    setInterval(() => refreshAll(), 15000);
   </script>
 </body>
 </html>
