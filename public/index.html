@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S2S Tracker — Dashboard</title>
+  <meta name="description" content="Sistema de Tracking Server-to-Server — Genesys → Google Ads">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-body: #080c14;
+      --bg-sidebar: #0d1220;
+      --bg-card: #111a2e;
+      --bg-card-hover: #162040;
+      --bg-input: #0a1020;
+      --bg-modal: #111a2e;
+      --border: #1e2d4a;
+      --border-focus: #3b6cf6;
+      --text-primary: #eef1f8;
+      --text-secondary: #7a889e;
+      --text-muted: #4e5b72;
+      --blue: #3b6cf6;
+      --blue-glow: rgba(59,108,246,0.25);
+      --green: #22c55e;
+      --green-bg: rgba(34,197,94,0.1);
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.1);
+      --yellow: #f59e0b;
+      --yellow-bg: rgba(245,158,11,0.1);
+      --purple: #a855f7;
+      --purple-bg: rgba(168,85,247,0.1);
+      --radius: 10px;
+      --radius-lg: 14px;
+      --shadow: 0 8px 32px rgba(0,0,0,0.4);
+      --transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+    }
+    [data-theme='light'] {
+      --bg-body: #f0f2f5;
+      --bg-sidebar: #ffffff;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f7f8fa;
+      --bg-input: #f0f2f5;
+      --bg-modal: #ffffff;
+      --border: #dfe3eb;
+      --border-focus: #3b6cf6;
+      --text-primary: #1a1d26;
+      --text-secondary: #5a6070;
+      --text-muted: #8b92a5;
+      --blue: #3b6cf6;
+      --blue-glow: rgba(59,108,246,0.15);
+      --green: #16a34a;
+      --green-bg: rgba(22,163,74,0.08);
+      --red: #dc2626;
+      --red-bg: rgba(220,38,38,0.08);
+      --yellow: #d97706;
+      --yellow-bg: rgba(217,119,6,0.08);
+      --purple: #9333ea;
+      --purple-bg: rgba(147,51,234,0.08);
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    [data-theme='light'] .spinner { border-color: rgba(0,0,0,.15); border-top-color: var(--blue); }
+    [data-theme='light'] .nav-badge { background:rgba(0,0,0,.08); }
+    [data-theme='light'] .login-page { background:radial-gradient(ellipse at 50% 0%, rgba(59,108,246,0.06), transparent 60%); }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Inter',-apple-system,sans-serif; background:var(--bg-body); color:var(--text-primary); min-height:100vh; transition: background .3s, color .3s; }
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background:var(--bg-body); }
+    ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+    /* ═══ LOGIN ═══ */
+    .login-page { display:flex; align-items:center; justify-content:center; min-height:100vh; background:radial-gradient(ellipse at 50% 0%, rgba(59,108,246,0.08), transparent 60%); }
+    .login-box { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:40px; width:400px; max-width:90vw; box-shadow:var(--shadow); }
+    .login-box .logo { text-align:center; margin-bottom:28px; }
+    .login-box .logo-icon { width:56px; height:56px; background:linear-gradient(135deg,var(--blue),var(--purple)); border-radius:16px; display:inline-flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:12px; }
+    .login-box .logo h1 { font-size:22px; font-weight:700; background:linear-gradient(135deg,var(--blue),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .login-box .logo p { font-size:13px; color:var(--text-muted); margin-top:4px; }
+    .login-box .field { margin-bottom:16px; }
+    .login-box .field label { display:block; font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+    .login-box .field input { width:100%; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; color:var(--text-primary); font-family:inherit; font-size:14px; outline:none; transition:var(--transition); }
+    .login-box .field input:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-glow); }
+    .login-box .login-btn { width:100%; padding:14px; background:linear-gradient(135deg,var(--blue),#6366f1); color:#fff; border:none; border-radius:var(--radius); font-family:inherit; font-size:14px; font-weight:600; cursor:pointer; transition:var(--transition); margin-top:8px; }
+    .login-box .login-btn:hover { transform:translateY(-1px); box-shadow:0 6px 24px var(--blue-glow); }
+    .login-box .login-btn:disabled { opacity:.6; cursor:not-allowed; transform:none; }
+    .login-error { background:var(--red-bg); color:var(--red); padding:10px 14px; border-radius:var(--radius); font-size:13px; margin-bottom:16px; display:none; text-align:center; }
+
+    /* ═══ APP LAYOUT ═══ */
+    .app { display:flex; min-height:100vh; display:none; }
+    .sidebar { width:250px; background:var(--bg-sidebar); border-right:1px solid var(--border); padding:20px 14px; position:fixed; top:0; left:0; bottom:0; display:flex; flex-direction:column; z-index:100; }
+    .sidebar .logo-area { display:flex; align-items:center; gap:10px; padding:4px 10px 20px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+    .sidebar .logo-area .icon { width:32px; height:32px; background:linear-gradient(135deg,var(--blue),var(--purple)); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; }
+    .sidebar .logo-area h1 { font-size:16px; font-weight:700; background:linear-gradient(135deg,var(--blue),var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    .nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:var(--radius); cursor:pointer; transition:var(--transition); font-size:13px; font-weight:500; color:var(--text-secondary); margin-bottom:2px; }
+    .nav-item:hover { background:var(--bg-card); color:var(--text-primary); }
+    .nav-item.active { background:var(--blue); color:#fff; box-shadow:0 4px 14px var(--blue-glow); }
+    .nav-item .ni-icon { font-size:16px; width:22px; text-align:center; }
+    .nav-badge { margin-left:auto; background:rgba(255,255,255,.15); padding:2px 7px; border-radius:20px; font-size:10px; font-weight:600; }
+    .sidebar-footer { margin-top:auto; padding-top:16px; border-top:1px solid var(--border); }
+    .sidebar-footer .user-info { display:flex; align-items:center; gap:10px; padding:8px 10px; font-size:12px; color:var(--text-muted); }
+    .sidebar-footer .logout-btn { display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:var(--radius); cursor:pointer; font-size:12px; color:var(--text-muted); transition:var(--transition); margin-top:4px; }
+    .sidebar-footer .logout-btn:hover { background:var(--red-bg); color:var(--red); }
+
+    .main { margin-left:250px; flex:1; padding:28px 32px; max-width:1100px; }
+    .page-header { margin-bottom:28px; }
+    .page-header h2 { font-size:24px; font-weight:700; margin-bottom:4px; }
+    .page-header p { color:var(--text-secondary); font-size:13px; }
+
+    /* ═══ STATS ═══ */
+    .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+    .stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; transition:var(--transition); position:relative; overflow:hidden; }
+    .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+    .stat-card:nth-child(1)::before { background:var(--blue); }
+    .stat-card:nth-child(2)::before { background:var(--green); }
+    .stat-card:nth-child(3)::before { background:var(--yellow); }
+    .stat-card:nth-child(4)::before { background:var(--red); }
+    .stat-card:hover { border-color:var(--border-focus); transform:translateY(-2px); box-shadow:var(--shadow); }
+    .stat-label { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); font-weight:600; margin-bottom:6px; }
+    .stat-value { font-size:24px; font-weight:800; }
+    .stat-card:nth-child(1) .stat-value { color:var(--blue); }
+    .stat-card:nth-child(2) .stat-value { color:var(--green); }
+    .stat-card:nth-child(3) .stat-value { color:var(--yellow); }
+    .stat-card:nth-child(4) .stat-value { color:var(--red); }
+
+    /* ═══ CARD ═══ */
+    .card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:22px; margin-bottom:20px; }
+    .card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .card-header h3 { font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px; }
+
+    /* ═══ BUTTONS ═══ */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 18px; border:none; border-radius:var(--radius); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer; transition:var(--transition); outline:none; }
+    .btn-primary { background:linear-gradient(135deg,var(--blue),#6366f1); color:#fff; box-shadow:0 4px 14px var(--blue-glow); }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px var(--blue-glow); }
+    .btn-primary:active { transform:translateY(0); }
+    .btn-primary:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+    .btn-outline { background:transparent; color:var(--text-secondary); border:1px solid var(--border); }
+    .btn-outline:hover { background:var(--bg-card-hover); color:var(--text-primary); }
+    .btn-success { background:linear-gradient(135deg,var(--green),#16a34a); color:#fff; }
+    .btn-danger { background:transparent; color:var(--red); border:1px solid rgba(239,68,68,.3); }
+    .btn-danger:hover { background:var(--red-bg); }
+    .btn-sm { padding:7px 12px; font-size:12px; }
+    .btn-icon { padding:7px 10px; font-size:14px; }
+
+    /* ═══ CONVERSION CARDS GRID ═══ */
+    .conversions-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; }
+    .conv-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px; transition:var(--transition); position:relative; }
+    .conv-card:hover { border-color:var(--border-focus); }
+    .conv-card-header { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; }
+    .conv-card-header h4 { font-size:15px; font-weight:600; display:flex; align-items:center; gap:8px; }
+    .conv-card-header h4 .gads-icon { width:24px; height:24px; background:linear-gradient(135deg,#4285f4,#34a853,#fbbc05,#ea4335); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; color:#fff; }
+    .conv-meta { display:flex; flex-direction:column; gap:6px; margin-bottom:14px; }
+    .conv-meta .meta-row { display:flex; justify-content:space-between; font-size:12px; }
+    .conv-meta .meta-row .lbl { color:var(--text-muted); }
+    .conv-meta .meta-row .val { color:var(--text-secondary); font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; }
+    .conv-webhook-url { display:flex; align-items:center; gap:8px; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius); padding:8px 12px; margin-bottom:14px; }
+    .conv-webhook-url input { flex:1; background:transparent; border:none; color:var(--text-secondary); font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; outline:none; }
+    .conv-webhook-url .copy-btn { background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:14px; padding:2px; transition:var(--transition); }
+    .conv-webhook-url .copy-btn:hover { color:var(--blue); }
+    .conv-actions { display:flex; gap:8px; }
+
+    /* ═══ TABLE ═══ */
+    .logs-table { width:100%; border-collapse:collapse; }
+    .logs-table th { text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-muted); padding:10px 12px; border-bottom:1px solid var(--border); font-weight:600; }
+    .logs-table td { padding:12px; font-size:12px; border-bottom:1px solid rgba(30,45,74,.4); vertical-align:middle; }
+    .logs-table tbody tr { transition:var(--transition); cursor:pointer; }
+    .logs-table tbody tr:hover { background:var(--bg-card-hover); }
+    .badge { display:inline-flex; align-items:center; gap:3px; padding:3px 8px; border-radius:20px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.3px; }
+    .badge-success { background:var(--green-bg); color:var(--green); }
+    .badge-error { background:var(--red-bg); color:var(--red); }
+    .badge-skipped { background:rgba(100,110,130,.12); color:#9ca3af; }
+    .badge-info { background:var(--purple-bg); color:var(--purple); }
+    .mono { font-family:'JetBrains Mono','Fira Code',monospace; font-size:11px; color:var(--text-secondary); }
+
+    /* ═══ MODAL ═══ */
+    .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(6px); z-index:500; display:none; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:var(--bg-modal); border:1px solid var(--border); border-radius:var(--radius-lg); padding:28px; max-width:540px; width:92%; max-height:85vh; overflow-y:auto; box-shadow:var(--shadow); animation:modalIn .25s ease; }
+    @keyframes modalIn { from { transform:scale(.95) translateY(10px); opacity:0; } to { transform:scale(1) translateY(0); opacity:1; } }
+    .modal h3 { font-size:17px; font-weight:700; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; }
+    .modal .close-btn { background:none; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; padding:4px; }
+    .modal .close-btn:hover { color:var(--text-primary); }
+    .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    .form-group { margin-bottom:0; }
+    .form-group.full { grid-column:1/-1; }
+    .form-group label { display:block; font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+    .form-group input,.form-group textarea { width:100%; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius); padding:10px 14px; color:var(--text-primary); font-family:inherit; font-size:13px; outline:none; transition:var(--transition); }
+    .form-group input:focus,.form-group textarea:focus { border-color:var(--blue); box-shadow:0 0 0 3px var(--blue-glow); }
+    .form-group .hint { font-size:10px; color:var(--text-muted); margin-top:3px; display:block; }
+    .form-divider { grid-column:1/-1; border-top:1px solid var(--border); margin:6px 0; }
+
+    /* ═══ TOAST ═══ */
+    .toast-container { position:fixed; top:20px; right:20px; z-index:1000; display:flex; flex-direction:column; gap:8px; }
+    .toast { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:14px 18px; min-width:300px; box-shadow:var(--shadow); animation:slideIn .3s ease; display:flex; align-items:center; gap:10px; font-size:13px; }
+    .toast.success { border-left:4px solid var(--green); }
+    .toast.error { border-left:4px solid var(--red); }
+    .toast.info { border-left:4px solid var(--blue); }
+    @keyframes slideIn { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+    @keyframes slideOut { from { transform:translateX(0); opacity:1; } to { transform:translateX(100%); opacity:0; } }
+
+    .section { display:none; }
+    .section.active { display:block; }
+
+    .empty-state { text-align:center; padding:40px 20px; color:var(--text-muted); }
+    .empty-state .es-icon { font-size:40px; margin-bottom:12px; display:block; }
+    .empty-state p { font-size:13px; }
+
+    .spinner { display:inline-block; width:14px; height:14px; border:2px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* ═══ DETAIL MODAL ═══ */
+    .detail-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(30,45,74,.4); font-size:12px; }
+    .detail-row .dlbl { color:var(--text-muted); font-weight:500; min-width:120px; }
+    .detail-row .dval { color:var(--text-primary); text-align:right; max-width:60%; word-break:break-all; }
+
+    @media(max-width:768px) {
+      .sidebar { display:none; }
+      .main { margin-left:0; padding:16px; }
+      .stats-grid { grid-template-columns:1fr 1fr; }
+      .form-grid { grid-template-columns:1fr; }
+      .conversions-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- ═══ LOGIN PAGE ═══ -->
+  <div class="login-page" id="loginPage">
+    <div class="login-box">
+      <div class="logo">
+        <div class="logo-icon">⚡</div>
+        <h1>S2S Tracker</h1>
+        <p>Sistema de Tracking Server-to-Server</p>
+      </div>
+      <div class="login-error" id="loginError">Credenciais inválidas</div>
+      <div class="field">
+        <label>Usuário</label>
+        <input type="text" id="loginUser" placeholder="Seu usuário" autocomplete="username">
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <input type="password" id="loginPass" placeholder="Sua senha" autocomplete="current-password">
+      </div>
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">Entrar</button>
+    </div>
+  </div>
+
+  <!-- ═══ APP ═══ -->
+  <div class="app" id="appContainer">
+    <aside class="sidebar">
+      <div class="logo-area">
+        <div class="icon">⚡</div>
+        <h1>S2S Tracker</h1>
+      </div>
+      <div class="nav-item active" data-section="dashboard" onclick="nav('dashboard')">
+        <span class="ni-icon">🏠</span> Início
+      </div>
+      <div class="nav-item" data-section="conversions" onclick="nav('conversions')">
+        <span class="ni-icon">⚡</span> Conversões
+        <span class="nav-badge" id="convCount">0</span>
+      </div>
+      <div class="nav-item" data-section="logs" onclick="nav('logs')">
+        <span class="ni-icon">📋</span> Logs
+        <span class="nav-badge" id="logCount">0</span>
+      </div>
+      <div class="nav-item" data-section="config" onclick="nav('config')">
+        <span class="ni-icon">⚙️</span> Configuração
+      </div>
+      <div class="sidebar-footer">
+        <div class="nav-item" onclick="toggleTheme()" style="margin-bottom:8px;">
+          <span class="ni-icon" id="themeIcon">🌙</span> <span id="themeLabel">Tema Escuro</span>
+        </div>
+        <div class="user-info">🟢 <span id="currentUser">—</span></div>
+        <div class="logout-btn" onclick="doLogout()">🚪 Sair</div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <!-- DASHBOARD -->
+      <div class="section active" id="section-dashboard">
+        <div class="page-header">
+          <h2>Olá 👋</h2>
+          <p>Resumo do rastreamento de conversões.</p>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">Total Recebidos</div><div class="stat-value" id="statTotal">0</div></div>
+          <div class="stat-card"><div class="stat-label">Enviados c/ Sucesso</div><div class="stat-value" id="statSuccess">0</div></div>
+          <div class="stat-card"><div class="stat-label">Faturamento Rastreado</div><div class="stat-value" id="statRevenue">R$ 0</div></div>
+          <div class="stat-card"><div class="stat-label">Erros / Ignorados</div><div class="stat-value" id="statErrors">0</div></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-bottom:28px;">
+          <button class="btn btn-primary" onclick="openNewConversionModal()">＋ Adicionar Nova Conversão</button>
+          <button class="btn btn-outline" onclick="nav('logs')">📋 Ver Logs</button>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>📡 Atividade Recente</h3>
+            <button class="btn btn-outline btn-sm" onclick="refreshAll()">↻ Atualizar</button>
+          </div>
+          <div id="recentActivity"><div class="empty-state"><span class="es-icon">📭</span><p>Nenhuma atividade. Cadastre uma conversão e teste!</p></div></div>
+        </div>
+      </div>
+
+      <!-- CONVERSIONS -->
+      <div class="section" id="section-conversions">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div>
+            <h2>⚡ Conversões</h2>
+            <p>Gerencie suas tags de conversão do Google Ads.</p>
+          </div>
+          <button class="btn btn-primary" onclick="openNewConversionModal()">＋ Nova Conversão</button>
+        </div>
+        <div class="conversions-grid" id="conversionsGrid">
+          <div class="empty-state" style="grid-column:1/-1;"><span class="es-icon">📦</span><p>Nenhuma conversão cadastrada.</p></div>
+        </div>
+      </div>
+
+      <!-- LOGS -->
+      <div class="section" id="section-logs">
+        <div class="page-header">
+          <h2>📋 Logs</h2>
+          <p>Histórico de webhooks processados.</p>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>Transações</h3>
+            <button class="btn btn-outline btn-sm" onclick="refreshAll()">↻ Atualizar</button>
+          </div>
+          <div id="logsContainer"><div class="empty-state"><span class="es-icon">📭</span><p>Nenhum log.</p></div></div>
+        </div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="section" id="section-config">
+        <div class="page-header">
+          <h2>⚙️ Configuração</h2>
+          <p>Status do sistema e variáveis de ambiente.</p>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>📡 Status do Servidor</h3><button class="btn btn-outline btn-sm" onclick="checkHealth()">↻ Verificar</button></div>
+          <div id="healthBox"><div class="empty-state"><span class="es-icon">🔍</span><p>Clique em "Verificar".</p></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>🔑 Variáveis Globais (Fallback)</h3></div>
+          <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:14px;font-family:monospace;font-size:11px;line-height:1.7;color:var(--text-secondary);white-space:pre-wrap;"># .env (opcional — cada conversão pode ter seu próprio token)
+GOOGLE_ADS_CLIENT_ID=
+GOOGLE_ADS_CLIENT_SECRET=
+GOOGLE_ADS_REFRESH_TOKEN=
+
+# GA4 Measurement Protocol (Fallback)
+GA4_API_SECRET=
+GA4_MEASUREMENT_ID=</div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- NEW CONVERSION MODAL -->
+  <div class="modal-overlay" id="newConvModal">
+    <div class="modal">
+      <h3>＋ Nova Conversão <button class="close-btn" onclick="closeModal('newConvModal')">&times;</button></h3>
+      <div class="form-grid">
+        <div class="form-group full">
+          <label>Nome do Produto / Campanha *</label>
+          <input type="text" id="ncName" placeholder="Ex: Venda - Curso Python">
+          <span class="hint">Será usado para gerar a URL do webhook</span>
+        </div>
+        <div class="form-group">
+          <label>🏷️ TAG (Conversion ID) *</label>
+          <input type="text" id="ncConvId" placeholder="Ex: AW-16738274628">
+          <span class="hint">Copie da sua conta Google Ads</span>
+        </div>
+        <div class="form-group">
+          <label>🎫 LABEL</label>
+          <input type="text" id="ncConvLabel" placeholder="Ex: AbCdEfGhIjK">
+          <span class="hint">Label da conversão</span>
+        </div>
+        <div class="form-group full" style="margin-top:14px;">
+          <div style="background:var(--green-bg);border:1px solid rgba(34,197,94,.2);border-radius:var(--radius);padding:12px;">
+            <span style="color:var(--green);font-weight:600;font-size:12px;">⚡ Sem conexão com a conta</span>
+            <p style="color:var(--text-secondary);font-size:11px;margin-top:4px;">O disparo é feito via pixel server-side. <strong>Não precisa de OAuth, Developer Token ou qualquer acesso à conta.</strong></p>
+          </div>
+        </div>
+        <div class="form-group full" style="margin-top:6px;">
+          <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="createNewConversion()" id="btnCreateConv">🚀 Criar Conversão</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAIL MODAL -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal">
+      <h3>Detalhes da Transação <button class="close-btn" onclick="closeModal('detailModal')">&times;</button></h3>
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <!-- WEBHOOK URL MODAL -->
+  <div class="modal-overlay" id="webhookUrlModal">
+    <div class="modal" style="text-align:center;">
+      <h3>✅ Conversão Criada! <button class="close-btn" onclick="closeModal('webhookUrlModal')">&times;</button></h3>
+      <p style="color:var(--text-secondary);font-size:13px;margin-bottom:16px;">Cole esta URL no gateway Genesys como destino do webhook.</p>
+      <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <input type="text" id="createdWebhookUrl" readonly style="flex:1;background:transparent;border:none;color:var(--blue);font-family:monospace;font-size:12px;outline:none;">
+        <button class="btn btn-outline btn-sm" onclick="copyText(document.getElementById('createdWebhookUrl').value)">📋</button>
+      </div>
+      <div style="background:var(--red-bg);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius);padding:12px;text-align:left;">
+        <span style="color:var(--red);font-weight:600;font-size:12px;">⚠️ ATENÇÃO</span>
+        <p style="color:var(--text-secondary);font-size:11px;margin-top:4px;">Configure este webhook <strong>apenas 1 vez</strong> no gateway.</p>
+      </div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:16px;" onclick="closeModal('webhookUrlModal')">Entendi!</button>
+    </div>
+  </div>
+
+  <script>
+    const API = window.location.origin;
+    let authToken = localStorage.getItem('s2s_token') || '';
+    let conversions = [];
+    let logs = [];
+
+    // ═══ AUTH ═══
+    function headers() { return { 'Content-Type':'application/json', 'X-Auth-Token': authToken }; }
+
+    function checkAuth() {
+      if (authToken) {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'flex';
+        document.getElementById('currentUser').textContent = authToken.split(':')[0];
+        refreshAll();
+      }
+    }
+
+    async function doLogin() {
+      const user = document.getElementById('loginUser').value.trim();
+      const pass = document.getElementById('loginPass').value;
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('loginError');
+      if (!user || !pass) { err.textContent = 'Preencha todos os campos'; err.style.display = 'block'; return; }
+      btn.disabled = true; btn.textContent = 'Entrando...'; err.style.display = 'none';
+      try {
+        const r = await fetch(`${API}/api/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:user,password:pass}) });
+        const d = await r.json();
+        if (d.success) { authToken = d.token; localStorage.setItem('s2s_token', authToken); checkAuth(); }
+        else { err.textContent = d.error || 'Credenciais inválidas'; err.style.display = 'block'; }
+      } catch(e) { err.textContent = 'Erro de conexão'; err.style.display = 'block'; }
+      btn.disabled = false; btn.textContent = 'Entrar';
+    }
+
+    function doLogout() { authToken = ''; localStorage.removeItem('s2s_token'); location.reload(); }
+
+    document.getElementById('loginPass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+    // ═══ NAV ═══
+    function nav(s) {
+      document.querySelectorAll('.section').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      document.getElementById(`section-${s}`).classList.add('active');
+      document.querySelector(`.nav-item[data-section="${s}"]`).classList.add('active');
+    }
+
+    // ═══ REFRESH ═══
+    async function refreshAll() { await Promise.all([loadConversions(), loadStats(), loadLogs()]); }
+
+    async function apiFetch(url, opts={}) {
+      const r = await fetch(url, { ...opts, headers: { ...headers(), ...(opts.headers||{}) } });
+      if (r.status === 401) { doLogout(); throw new Error('Not authorized'); }
+      return r;
+    }
+
+    // ═══ CONVERSIONS ═══
+    async function loadConversions() {
+      try {
+        const r = await apiFetch(`${API}/api/conversions`);
+        conversions = await r.json();
+        document.getElementById('convCount').textContent = conversions.length;
+        renderConversions();
+      } catch(e) { console.error(e); }
+    }
+
+    function renderConversions() {
+      const grid = document.getElementById('conversionsGrid');
+      if (!conversions.length) {
+        grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;"><span class="es-icon">📦</span><p>Nenhuma conversão. Clique em "+ Nova Conversão".</p></div>';
+        return;
+      }
+      grid.innerHTML = conversions.map(c => `
+        <div class="conv-card">
+          <div class="conv-card-header">
+            <h4><span class="gads-icon">G</span> ${esc(c.name)}</h4>
+            <button class="btn btn-danger btn-icon" onclick="deleteConv('${c.id}','${esc(c.name)}')" title="Excluir">🗑</button>
+          </div>
+          <div class="conv-meta">
+            <div class="meta-row"><span class="lbl">🏷️ TAG</span><span class="val">${esc(c.conversion_id)}</span></div>
+            <div class="meta-row"><span class="lbl">🎫 LABEL</span><span class="val">${esc(c.conversion_label||'—')}</span></div>
+          </div>
+          <div class="conv-webhook-url">
+            <input type="text" value="${API}/api/webhook/${c.slug}" readonly id="url-${c.id}">
+            <button class="copy-btn" onclick="copyText('${API}/api/webhook/${c.slug}')" title="Copiar URL">📋</button>
+          </div>
+          <div class="conv-actions">
+            <button class="btn btn-success btn-sm" onclick="testWebhook('${c.slug}','${esc(c.name)}')">🧪 Simular Venda</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openNewConversionModal() {
+      ['ncName','ncConvId','ncConvLabel'].forEach(id => document.getElementById(id).value = '');
+      openModal('newConvModal');
+    }
+
+    async function createNewConversion() {
+      const btn = document.getElementById('btnCreateConv');
+      const name = document.getElementById('ncName').value.trim();
+      const conversion_id = document.getElementById('ncConvId').value.trim();
+      if (!name || !conversion_id) { toast('error','Nome e Conversion ID são obrigatórios.'); return; }
+      btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Criando...';
+      try {
+        const r = await apiFetch(`${API}/api/conversions`, {
+          method:'POST',
+          body: JSON.stringify({
+            name, conversion_id,
+            conversion_label: document.getElementById('ncConvLabel').value.trim(),
+          })
+        });
+        const conv = await r.json();
+        if (r.ok) {
+          closeModal('newConvModal');
+          const webhookUrl = `${API}/api/webhook/${conv.slug}`;
+          document.getElementById('createdWebhookUrl').value = webhookUrl;
+          openModal('webhookUrlModal');
+          toast('success', `Conversão "${conv.name}" criada!`);
+          refreshAll();
+        } else { toast('error', conv.error || 'Erro ao criar'); }
+      } catch(e) { toast('error', e.message); }
+      btn.disabled = false; btn.innerHTML = '🚀 Criar Conversão';
+    }
+
+    async function deleteConv(id, name) {
+      if (!confirm(`Excluir "${name}"?`)) return;
+      try {
+        await apiFetch(`${API}/api/conversions/${id}`, { method:'DELETE' });
+        toast('info', `"${name}" excluída.`);
+        refreshAll();
+      } catch(e) { toast('error', e.message); }
+    }
+
+    // ═══ TEST WEBHOOK ═══
+    async function testWebhook(slug, name) {
+      toast('info', `Testando "${name}"...`);
+      try {
+        const r = await apiFetch(`${API}/api/test/${slug}`, { method:'POST' });
+        const d = await r.json();
+        if (d.response?.success) {
+          toast('success', `✅ Google Ads retornou Sucesso (200) para "${name}"!`);
+        } else if (d.response?.action === 'processed') {
+          toast('error', `⚠️ Processado mas sem confirmação do Google Ads. Verifique as credenciais.`);
+        } else {
+          toast('error', `❌ Teste falhou para "${name}". Verifique os logs.`);
+        }
+        setTimeout(refreshAll, 800);
+      } catch(e) { toast('error', `Erro: ${e.message}`); }
+    }
+
+    // ═══ LOGS ═══
+    async function loadLogs() {
+      try {
+        const r = await apiFetch(`${API}/api/logs?limit=50`);
+        logs = await r.json();
+        document.getElementById('logCount').textContent = logs.length;
+        renderLogs();
+        renderRecent();
+      } catch(e) { console.error(e); }
+    }
+
+    function renderLogs() {
+      const c = document.getElementById('logsContainer');
+      if (!logs.length) { c.innerHTML = '<div class="empty-state"><span class="es-icon">📭</span><p>Nenhum log.</p></div>'; return; }
+      c.innerHTML = `<table class="logs-table"><thead><tr>
+        <th>Conversão</th><th>Transaction</th><th>Status</th><th>Valor</th><th>Google Ads</th><th>GA4</th><th>Data</th>
+      </tr></thead><tbody>${logs.map((l,i) => `<tr onclick="showLogDetail(${i})">
+        <td style="font-weight:500;font-size:12px;">${esc(l.conversion_name||'—')}</td>
+        <td><span class="mono">${trunc(l.transaction_id,20)}</span></td>
+        <td>${sBadge(l.status)}</td>
+        <td style="font-weight:600;font-size:12px;">R$ ${(l.value||0).toFixed(2)}</td>
+        <td>${rBadge(l.google_ads_success)}</td>
+        <td>${rBadge(l.ga4_success)}</td>
+        <td class="mono">${fmtTime(l.created_at)}</td>
+      </tr>`).join('')}</tbody></table>`;
+    }
+
+    function renderRecent() {
+      const c = document.getElementById('recentActivity');
+      const recent = logs.slice(0,5);
+      if (!recent.length) { c.innerHTML = '<div class="empty-state"><span class="es-icon">📭</span><p>Nenhuma atividade. Cadastre uma conversão e teste!</p></div>'; return; }
+      c.innerHTML = `<table class="logs-table"><thead><tr>
+        <th>Conversão</th><th>Transaction</th><th>Valor</th><th>Resultado</th><th>Data</th>
+      </tr></thead><tbody>${recent.map((l,i)=>`<tr onclick="showLogDetail(${i})">
+        <td style="font-weight:500;font-size:12px;">${esc(l.conversion_name||'—')}</td>
+        <td><span class="mono">${trunc(l.transaction_id,18)}</span></td>
+        <td style="font-weight:600;font-size:12px;">R$ ${(l.value||0).toFixed(2)}</td>
+        <td>${resBadge(l.result)}</td>
+        <td class="mono">${fmtTime(l.created_at)}</td>
+      </tr>`).join('')}</tbody></table>`;
+    }
+
+    function showLogDetail(i) {
+      const l = logs[i];
+      const dc = document.getElementById('detailContent');
+      dc.innerHTML = `
+        <div class="detail-row"><span class="dlbl">Conversão</span><span class="dval">${esc(l.conversion_name||'—')}</span></div>
+        <div class="detail-row"><span class="dlbl">Transaction ID</span><span class="dval mono">${esc(l.transaction_id)}</span></div>
+        <div class="detail-row"><span class="dlbl">Status</span><span class="dval">${sBadge(l.status)}</span></div>
+        <div class="detail-row"><span class="dlbl">Valor</span><span class="dval" style="font-weight:600;">R$ ${(l.value||0).toFixed(2)} ${l.currency}</span></div>
+        <div class="detail-row"><span class="dlbl">Email</span><span class="dval mono">${esc(l.email||'—')}</span></div>
+        <div class="detail-row"><span class="dlbl">Telefone</span><span class="dval mono">${esc(l.phone||'—')}</span></div>
+        <div class="detail-row"><span class="dlbl">GCLID</span><span class="dval mono">${esc(l.gclid||'—')}</span></div>
+        <div class="detail-row"><span class="dlbl">Email (SHA-256)</span><span class="dval mono" style="font-size:9px;">${esc(l.hashed_email||'—')}</span></div>
+        <div class="detail-row"><span class="dlbl">Phone (SHA-256)</span><span class="dval mono" style="font-size:9px;">${esc(l.hashed_phone||'—')}</span></div>
+        <div class="detail-row"><span class="dlbl">Google Ads</span><span class="dval">${rBadge(l.google_ads_success)}${l.google_ads_details?'<br><span class="mono" style="font-size:9px;">'+esc(l.google_ads_details)+'</span>':''}</span></div>
+        <div class="detail-row"><span class="dlbl">GA4</span><span class="dval">${rBadge(l.ga4_success)}${l.ga4_details?'<br><span class="mono" style="font-size:9px;">'+esc(l.ga4_details)+'</span>':''}</span></div>
+        <div class="detail-row"><span class="dlbl">Resultado</span><span class="dval">${resBadge(l.result)}</span></div>
+        <div class="detail-row"><span class="dlbl">Data/Hora</span><span class="dval mono">${l.created_at}</span></div>
+      `;
+      openModal('detailModal');
+    }
+
+    // ═══ STATS ═══
+    async function loadStats() {
+      try {
+        const r = await apiFetch(`${API}/api/stats`);
+        const s = await r.json();
+        document.getElementById('statTotal').textContent = s.total;
+        document.getElementById('statSuccess').textContent = s.success;
+        document.getElementById('statRevenue').textContent = `R$ ${s.revenue.toLocaleString('pt-BR',{minimumFractionDigits:2})}`;
+        document.getElementById('statErrors').textContent = s.errors + s.skipped;
+      } catch(e) { console.error(e); }
+    }
+
+    // ═══ HEALTH ═══
+    async function checkHealth() {
+      const box = document.getElementById('healthBox');
+      box.innerHTML = '<div style="text-align:center;padding:20px;"><span class="spinner" style="border-color:var(--text-muted);border-top-color:var(--blue);width:20px;height:20px;"></span></div>';
+      try {
+        const r = await fetch(`${API}/api/health`);
+        const d = await r.json();
+        box.innerHTML = `
+          <div class="detail-row"><span class="dlbl">Status</span><span class="dval"><span class="badge badge-success">✓ Online</span></span></div>
+          <div class="detail-row"><span class="dlbl">Uptime</span><span class="dval mono">${fmtUptime(d.uptime)}</span></div>
+          <div class="detail-row"><span class="dlbl">GA4 (Fallback)</span><span class="dval">${d.ga4_configured ? '<span class="badge badge-success">✓ Config</span>' : '<span class="badge badge-skipped">— Não config</span>'}</span></div>
+        `;
+      } catch(e) {
+        box.innerHTML = `<div style="text-align:center;padding:20px;"><span class="badge badge-error">✕ Offline</span><p style="color:var(--text-muted);font-size:11px;margin-top:6px;">${e.message}</p></div>`;
+      }
+    }
+
+    // ═══ MODALS ═══
+    function openModal(id) { document.getElementById(id).classList.add('show'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+      el.addEventListener('click', e => { if (e.target === e.currentTarget) el.classList.remove('show'); });
+    });
+
+    // ═══ HELPERS ═══
+    const ACCEPTED = ['authorized','paid','approved','captured','confirmed','settled','complete'];
+    function sBadge(s) { if(!s||s==='unknown') return '<span class="badge badge-skipped">?</span>'; return ACCEPTED.includes(s)?`<span class="badge badge-success">✓ ${s}</span>`:`<span class="badge badge-skipped">⊘ ${s}</span>`; }
+    function rBadge(v) { if(v===true) return '<span class="badge badge-success">✓ ok</span>'; if(v===false) return '<span class="badge badge-error">✕ erro</span>'; return '<span class="badge badge-skipped">—</span>'; }
+    function resBadge(r) { if(r==='success') return '<span class="badge badge-success">✓ success</span>'; if(r==='error') return '<span class="badge badge-error">✕ error</span>'; return '<span class="badge badge-skipped">⊘ skipped</span>'; }
+    function trunc(s,l) { return (!s)?'—':s.length>l?s.substring(0,l)+'…':s; }
+    function esc(s) { if(!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+    function fmtTime(t) { if(!t) return '—'; try { return new Date(t+'Z').toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}); } catch { return t; } }
+    function fmtUptime(s) { const h=Math.floor(s/3600); const m=Math.floor((s%3600)/60); return `${h}h ${m}m`; }
+    function copyText(t) { navigator.clipboard.writeText(t).then(()=>toast('success','URL copiada!')); }
+
+    function toast(type, msg) {
+      const c = document.getElementById('toastContainer');
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      const icons = {success:'✅',error:'❌',info:'ℹ️'};
+      t.innerHTML = `<span>${icons[type]||'ℹ️'}</span><span>${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(()=>{ t.style.animation='slideOut .3s ease forwards'; setTimeout(()=>t.remove(),300); }, 4000);
+    }
+
+    // ═══ THEME ═══
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'light' ? 'dark' : 'light';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('s2s_theme', next);
+      updateThemeUI(next);
+    }
+    function updateThemeUI(theme) {
+      document.getElementById('themeIcon').textContent = theme === 'light' ? '☀️' : '🌙';
+      document.getElementById('themeLabel').textContent = theme === 'light' ? 'Tema Claro' : 'Tema Escuro';
+    }
+    function initTheme() {
+      const saved = localStorage.getItem('s2s_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      updateThemeUI(saved);
+    }
+    initTheme();
+
+    // ═══ INIT ═══
+    checkAuth();
+    setInterval(() => { if(authToken) refreshAll(); }, 15000);
+  </script>
+</body>
+</html>
